@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "bankconv",
+  "version": "0.1.1",
+  "description": "Convert PDF bank and credit card statements into transactions, CSV, OFX, QFX, QBO or Xero CSV with BankConv. Needs a BankConv API key in BANKCONV_API_KEY.",
+  "author": {
+    "name": "BankConv",
+    "email": "support@bankconv.com",
+    "url": "https://bankconv.com"
+  },
+  "homepage": "https://bankconv.com/integrations/mcp",
+  "repository": "https://github.com/wassim/bankconv-mcp",
+  "license": "MIT",
+  "keywords": ["bank statement", "pdf to csv", "ofx", "qfx", "qbo", "quickbooks", "xero", "quicken", "accounting"]
+}
