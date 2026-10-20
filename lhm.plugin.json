@@ -1,0 +1,209 @@
+{
+  "author": "BankConv (https://bankconv.com)",
+  "description": "MCP server for BankConv: convert PDF bank statements into transactions, CSV, OFX, QFX, QBO or Xero CSV from Claude, Cursor and other AI assistants.",
+  "homepage": "https://bankconv.com/integrations/mcp",
+  "identifier": "wassim-bankconv-mcp",
+  "name": "BankConv",
+  "prompts": [],
+  "resources": [],
+  "tags": [
+    "mcp",
+    "model-context-protocol",
+    "bank-statement",
+    "pdf",
+    "csv",
+    "ofx",
+    "qbo",
+    "quickbooks",
+    "xero",
+    "accounting",
+    "bankconv"
+  ],
+  "tools": [
+    {
+      "name": "convert_statement",
+      "title": "Convert a bank statement PDF",
+      "description": "Convert a PDF bank or credit card statement on this computer with BankConv. Use this for a new PDF; for a statement converted earlier, use get_transactions or download_statement with its conversion id (list_conversions finds it). With output \"transactions\" (the default) it returns a summary and every transaction as JSON: ISO date, description, signed amount (money in positive), running balance; opening balances and totals are left out. Any other output saves that file and returns only its path and any warnings. csv: the statement as a spreadsheet; ofx: Xero, Sage, MYOB, QuickBooks Online; qfx: Quicken; qbo: QuickBooks Desktop (Web Connect); xero: Xero CSV with Xero's own columns. Uploading uses one BankConv page per PDF page. Waits until the conversion finishes. Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can't be read as transactions (the message names the row), insufficient_credits when the account has too few pages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to the PDF statement on this computer."
+          },
+          "password": {
+            "description": "The PDF password, if the statement is password-protected.",
+            "type": "string"
+          },
+          "output": {
+            "default": "transactions",
+            "description": "\"transactions\" returns the rows to you; any other value saves that file. csv: the statement as a spreadsheet; ofx: Xero, Sage, MYOB, QuickBooks Online; qfx: Quicken; qbo: QuickBooks Desktop (Web Connect); xero: Xero CSV with Xero's own columns.",
+            "type": "string",
+            "enum": [
+              "transactions",
+              "csv",
+              "ofx",
+              "qfx",
+              "qbo",
+              "xero"
+            ]
+          },
+          "save_to": {
+            "description": "For file outputs: a file path or folder. Defaults to the PDF's folder, named after the PDF. An existing file at that path is overwritten.",
+            "type": "string"
+          },
+          "timeout_seconds": {
+            "default": 180,
+            "description": "How long to wait for the conversion. On timeout the conversion keeps running; fetch it later with its conversion id.",
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 900
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_transactions",
+      "title": "Get the transactions of a conversion",
+      "description": "Get the transactions of an earlier BankConv conversion by its conversion id (from convert_statement or list_conversions): ISO date, description, signed amount (money in positive) and running balance, with the bank, account, period and currency. Read-only; uses no pages. To save a file instead, use download_statement. Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can't be read as transactions (the message names the row), insufficient_credits when the account has too few pages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "conversion_id": {
+            "type": "string",
+            "description": "The conversion id, as returned by convert_statement or list_conversions."
+          },
+          "tables": {
+            "description": "Advanced: which tables to read, as page:table indexes from 0 (\"0:1,1:0\"). Leave out and BankConv picks the transaction tables.",
+            "type": "string",
+            "pattern": "^\\d+:\\d+(,\\d+:\\d+)*$"
+          }
+        },
+        "required": [
+          "conversion_id"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "download_statement",
+      "title": "Save a conversion as a file",
+      "description": "Save an earlier BankConv conversion as a file on this computer, by its conversion id (from convert_statement or list_conversions). Returns the saved path and any warnings (for example a bank QuickBooks doesn't list), not the file contents. Uses no pages. csv: the statement as a spreadsheet; ofx: Xero, Sage, MYOB, QuickBooks Online; qfx: Quicken; qbo: QuickBooks Desktop (Web Connect); xero: Xero CSV with Xero's own columns. Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can't be read as transactions (the message names the row), insufficient_credits when the account has too few pages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "conversion_id": {
+            "type": "string",
+            "description": "The conversion id, as returned by convert_statement or list_conversions."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "ofx",
+              "qfx",
+              "qbo",
+              "xero"
+            ],
+            "description": "csv: the statement as a spreadsheet; ofx: Xero, Sage, MYOB, QuickBooks Online; qfx: Quicken; qbo: QuickBooks Desktop (Web Connect); xero: Xero CSV with Xero's own columns."
+          },
+          "save_to": {
+            "description": "A file path or folder. Defaults to the Downloads folder (or the home folder), named after the original PDF. An existing file at that path is overwritten.",
+            "type": "string"
+          },
+          "tables": {
+            "description": "Advanced: which tables to read, as page:table indexes from 0 (\"0:1,1:0\"). Leave out and BankConv picks the transaction tables.",
+            "type": "string",
+            "pattern": "^\\d+:\\d+(,\\d+:\\d+)*$"
+          }
+        },
+        "required": [
+          "conversion_id",
+          "format"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_conversions",
+      "title": "List recent conversions",
+      "description": "List the BankConv account's recent conversions, newest first, one line each: conversion id, status, file name, page count and upload time. Use it to find the id of an earlier conversion for get_transactions or download_statement, or to check on one still processing. Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "Only list conversions with this status. no_credits means it waits for pages; failed means the PDF couldn't be converted.",
+            "type": "string",
+            "enum": [
+              "pending",
+              "no_credits",
+              "processing",
+              "completed",
+              "failed"
+            ]
+          },
+          "limit": {
+            "default": 15,
+            "description": "How many conversions to list, 1 to 100.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_credits",
+      "title": "Check the page balance",
+      "description": "Check how many BankConv pages the account has left in the current period, as JSON. Each PDF page uses one page, so check before converting a large batch. Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "version": "0.1.1"
+}
