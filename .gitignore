@@ -2,3 +2,5 @@ node_modules
 dist
 .env
 bankconv.mcpb
+bankconv-smithery.mcpb
+smithery-tools.json

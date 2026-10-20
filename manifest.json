@@ -23,18 +23,35 @@
     "entry_point": "dist/index.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/dist/index.js"],
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
       "env": {
         "BANKCONV_API_KEY": "${user_config.api_key}"
       }
     }
   },
   "tools": [
-    { "name": "convert_statement", "description": "Convert a PDF statement on this computer into transactions, or save it as CSV, OFX, QFX, QBO or Xero CSV." },
-    { "name": "get_transactions", "description": "Get the transactions of an earlier conversion." },
-    { "name": "download_statement", "description": "Save an earlier conversion as CSV, OFX, QFX, QBO or Xero CSV." },
-    { "name": "list_conversions", "description": "List recent conversions with their status." },
-    { "name": "get_credits", "description": "Check how many pages the account has left." }
+    {
+      "name": "convert_statement",
+      "description": "Convert a PDF bank or credit card statement on this computer with BankConv. Use this for a new PDF; for a statement converted earlier, use get_transactions or download_statement with its conversion id (list_conversions finds it). With output \"transactions\" (the default) it returns a summary and every transaction as JSON: ISO date, description, signed amount (money in positive), running balance; opening balances and totals are left out. Any other output saves that file and returns only its path and any warnings. csv: the statement as a spreadsheet; ofx: Xero, Sage, MYOB, QuickBooks Online; qfx: Quicken; qbo: QuickBooks Desktop (Web Connect); xero: Xero CSV with Xero's own columns. Uploading uses one BankConv page per PDF page. Waits until the conversion finishes. Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can't be read as transactions (the message names the row), insufficient_credits when the account has too few pages."
+    },
+    {
+      "name": "get_transactions",
+      "description": "Get the transactions of an earlier BankConv conversion by its conversion id (from convert_statement or list_conversions): ISO date, description, signed amount (money in positive) and running balance, with the bank, account, period and currency. Read-only; uses no pages. To save a file instead, use download_statement. Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can't be read as transactions (the message names the row), insufficient_credits when the account has too few pages."
+    },
+    {
+      "name": "download_statement",
+      "description": "Save an earlier BankConv conversion as a file on this computer, by its conversion id (from convert_statement or list_conversions). Returns the saved path and any warnings (for example a bank QuickBooks doesn't list), not the file contents. Uses no pages. csv: the statement as a spreadsheet; ofx: Xero, Sage, MYOB, QuickBooks Online; qfx: Quicken; qbo: QuickBooks Desktop (Web Connect); xero: Xero CSV with Xero's own columns. Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can't be read as transactions (the message names the row), insufficient_credits when the account has too few pages."
+    },
+    {
+      "name": "list_conversions",
+      "description": "List the BankConv account's recent conversions, newest first, one line each: conversion id, status, file name, page count and upload time. Use it to find the id of an earlier conversion for get_transactions or download_statement, or to check on one still processing. Read-only."
+    },
+    {
+      "name": "get_credits",
+      "description": "Check how many BankConv pages the account has left in the current period, as JSON. Each PDF page uses one page, so check before converting a large batch. Read-only."
+    }
   ],
   "user_config": {
     "api_key": {
@@ -45,10 +62,26 @@
       "required": true
     }
   },
-  "keywords": ["bank statement", "pdf to csv", "ofx", "qfx", "qbo", "quickbooks", "xero", "quicken", "accounting"],
+  "keywords": [
+    "bank statement",
+    "pdf to csv",
+    "ofx",
+    "qfx",
+    "qbo",
+    "quickbooks",
+    "xero",
+    "quicken",
+    "accounting"
+  ],
   "license": "MIT",
   "compatibility": {
-    "platforms": ["darwin", "win32", "linux"],
-    "runtimes": { "node": ">=20.0.0" }
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
   }
 }
