@@ -1,5 +1,5 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -139,6 +139,12 @@ describe('tools', () => {
     expect(await outputPath('xero', source, folder, null)).toBe(join(folder, 'chase-jan-xero.csv'));
     expect(await outputPath('ofx', null, join(folder, 'jan.ofx'), 'statement.ofx')).toBe(join(folder, 'jan.ofx'));
     expect(await outputPath('xero', null, folder, 'statement-xero.csv')).toBe(join(folder, 'statement-xero.csv'));
+  });
+
+  it('saves files with no PDF next to them in Downloads or the home folder, never the working directory', async () => {
+    const path = await outputPath('ofx', null, undefined, 'statement.ofx');
+
+    expect([join(homedir(), 'Downloads', 'statement.ofx'), join(homedir(), 'statement.ofx')]).toContain(path);
   });
 
   it('summarises transactions before the full JSON', () => {

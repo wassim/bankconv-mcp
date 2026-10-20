@@ -1,6 +1,6 @@
 {
   "name": "bankconv-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "mcpName": "io.github.wassim/bankconv-mcp",
   "description": "MCP server for BankConv: convert PDF bank statements into transactions, CSV, OFX, QFX, QBO or Xero CSV from Claude, Cursor and other AI assistants.",
   "keywords": [

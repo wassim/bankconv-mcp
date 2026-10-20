@@ -1,4 +1,6 @@
+import { existsSync } from 'node:fs';
 import { stat, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
@@ -16,13 +18,23 @@ const tablesParam = z
   .optional()
   .describe('Advanced: which tables to read, as page:table indexes from 0 ("0:1,1:0"). Leave out and BankConv picks the transaction tables.');
 
-/** Where a downloaded file goes: the given file, a file inside the given folder, or next to the PDF. */
+const errorHelp =
+  'Errors say what went wrong: not_found for an unknown conversion id, gone once a conversion was deleted under data retention (24 hours by default), unreadable_statement when the tables can\'t be read as transactions (the message names the row), insufficient_credits when the account has too few pages.';
+
+/** The folder for files that have no PDF next to them: Downloads when it exists, else the home folder. */
+function defaultFolder(): string {
+  const downloads = join(homedir(), 'Downloads');
+
+  return existsSync(downloads) ? downloads : homedir();
+}
+
+/** Where a downloaded file goes: the given file, a file inside the given folder, next to the PDF, or in the default folder. */
 export async function outputPath(format: FileFormat, sourcePdf: string | null, saveTo: string | undefined, suggested: string | null): Promise<string> {
   const extension = format === 'xero' ? '-xero.csv' : `.${format}`;
   const stem = sourcePdf ? basename(sourcePdf, extname(sourcePdf)) : (suggested ?? 'statement').replace(/(-xero)?\.[^.]+$/, '');
 
   if (!saveTo) {
-    return join(sourcePdf ? dirname(resolve(sourcePdf)) : process.cwd(), `${stem}${extension}`);
+    return join(sourcePdf ? dirname(resolve(sourcePdf)) : defaultFolder(), `${stem}${extension}`);
   }
 
   const target = resolve(saveTo);
@@ -79,9 +91,12 @@ export function registerTools(server: McpServer, client: BankConvClient): void {
     {
       title: 'Convert a bank statement PDF',
       description:
-        'Convert a PDF bank or credit card statement on this computer with BankConv. Returns the transactions (date, description, signed amount, balance) or saves a file next to the PDF. ' +
+        'Convert a PDF bank or credit card statement on this computer with BankConv. Use this for a new PDF; for a statement converted earlier, use get_transactions or download_statement with its conversion id (list_conversions finds it). ' +
+        'With output "transactions" (the default) it returns a summary and every transaction as JSON: ISO date, description, signed amount (money in positive), running balance; opening balances and totals are left out. ' +
+        'Any other output saves that file and returns only its path and any warnings. ' +
         formatHelp +
-        ' Uses pages from the BankConv account.',
+        ' Uploading uses one BankConv page per PDF page. Waits until the conversion finishes. ' +
+        errorHelp,
       inputSchema: {
         file_path: z.string().describe('Path to the PDF statement on this computer.'),
         password: z.string().optional().describe('The PDF password, if the statement is password-protected.'),
@@ -89,8 +104,8 @@ export function registerTools(server: McpServer, client: BankConvClient): void {
           .enum(['transactions', ...fileFormats])
           .default('transactions')
           .describe('"transactions" returns the rows to you; any other value saves that file. ' + formatHelp),
-        save_to: z.string().optional().describe('For file outputs: a file path or folder. Defaults to the PDF\'s folder.'),
-        timeout_seconds: z.number().int().min(10).max(900).default(180).describe('How long to wait for the conversion.'),
+        save_to: z.string().optional().describe('For file outputs: a file path or folder. Defaults to the PDF\'s folder, named after the PDF. An existing file at that path is overwritten.'),
+        timeout_seconds: z.number().int().min(10).max(900).default(180).describe('How long to wait for the conversion. On timeout the conversion keeps running; fetch it later with its conversion id.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
@@ -114,8 +129,10 @@ export function registerTools(server: McpServer, client: BankConvClient): void {
     'get_transactions',
     {
       title: 'Get the transactions of a conversion',
-      description: 'Get the transactions of an earlier BankConv conversion: date, description, signed amount and balance, with the account and period.',
-      inputSchema: { conversion_id: z.string().describe('The conversion id.'), tables: tablesParam },
+      description:
+        'Get the transactions of an earlier BankConv conversion by its conversion id (from convert_statement or list_conversions): ISO date, description, signed amount (money in positive) and running balance, with the bank, account, period and currency. Read-only; uses no pages. To save a file instead, use download_statement. ' +
+        errorHelp,
+      inputSchema: { conversion_id: z.string().describe('The conversion id, as returned by convert_statement or list_conversions.'), tables: tablesParam },
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async ({ conversion_id, tables }) => {
@@ -131,11 +148,18 @@ export function registerTools(server: McpServer, client: BankConvClient): void {
     'download_statement',
     {
       title: 'Save a conversion as a file',
-      description: 'Save an earlier BankConv conversion as a file. ' + formatHelp,
+      description:
+        'Save an earlier BankConv conversion as a file on this computer, by its conversion id (from convert_statement or list_conversions). Returns the saved path and any warnings (for example a bank QuickBooks doesn\'t list), not the file contents. Uses no pages. ' +
+        formatHelp +
+        ' ' +
+        errorHelp,
       inputSchema: {
-        conversion_id: z.string().describe('The conversion id.'),
+        conversion_id: z.string().describe('The conversion id, as returned by convert_statement or list_conversions.'),
         format: z.enum(fileFormats).describe(formatHelp),
-        save_to: z.string().optional().describe('A file path or folder. Defaults to the current folder.'),
+        save_to: z
+          .string()
+          .optional()
+          .describe('A file path or folder. Defaults to the Downloads folder (or the home folder), named after the original PDF. An existing file at that path is overwritten.'),
         tables: tablesParam,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
@@ -153,10 +177,14 @@ export function registerTools(server: McpServer, client: BankConvClient): void {
     'list_conversions',
     {
       title: 'List recent conversions',
-      description: 'List the BankConv account\'s recent conversions with their status, file name and page count.',
+      description:
+        'List the BankConv account\'s recent conversions, newest first, one line each: conversion id, status, file name, page count and upload time. Use it to find the id of an earlier conversion for get_transactions or download_statement, or to check on one still processing. Read-only.',
       inputSchema: {
-        status: z.enum(['pending', 'no_credits', 'processing', 'completed', 'failed']).optional(),
-        limit: z.number().int().min(1).max(100).default(15),
+        status: z
+          .enum(['pending', 'no_credits', 'processing', 'completed', 'failed'])
+          .optional()
+          .describe('Only list conversions with this status. no_credits means it waits for pages; failed means the PDF couldn\'t be converted.'),
+        limit: z.number().int().min(1).max(100).default(15).describe('How many conversions to list, 1 to 100.'),
       },
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
@@ -178,7 +206,8 @@ export function registerTools(server: McpServer, client: BankConvClient): void {
     'get_credits',
     {
       title: 'Check the page balance',
-      description: 'Check how many BankConv pages the account has left this billing period.',
+      description:
+        'Check how many BankConv pages the account has left in the current period, as JSON. Each PDF page uses one page, so check before converting a large batch. Read-only.',
       inputSchema: {},
       annotations: { readOnlyHint: true, openWorldHint: true },
     },

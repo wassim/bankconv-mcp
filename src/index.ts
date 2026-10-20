@@ -11,7 +11,7 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const server = new McpServer({ name: 'bankconv', version: '0.1.0' });
+const server = new McpServer({ name: 'bankconv', version: '0.1.1' });
 
 registerTools(server, new BankConvClient(apiKey, process.env.BANKCONV_API_URL ?? 'https://bankconv.com/api/v1'));
 

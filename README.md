@@ -1,5 +1,7 @@
 # BankConv MCP server
 
+[![wassim/bankconv-mcp MCP server](https://glama.ai/mcp/servers/wassim/bankconv-mcp/badges/score.svg)](https://glama.ai/mcp/servers/wassim/bankconv-mcp)
+
 Convert PDF bank statements into transactions, CSV, OFX, QFX, QBO or Xero CSV from Claude, Cursor, VS Code and other AI assistants.
 
 Point your assistant at a statement on your computer and ask for what you need: the transactions to analyse, a CSV, or a file your accounting software imports. The server uploads the PDF to [BankConv](https://bankconv.com), waits for the conversion and either returns the transactions or saves the file next to the PDF.
@@ -68,7 +70,7 @@ Requires Node.js 20 or later.
 | --- | --- |
 | `convert_statement` | Convert a PDF on this computer. Returns the transactions, or saves CSV, OFX, QFX, QBO or Xero CSV (next to the PDF unless you give `save_to`). Takes the PDF password if there is one. |
 | `get_transactions` | Get the transactions of an earlier conversion. |
-| `download_statement` | Save an earlier conversion as CSV, OFX, QFX, QBO or Xero CSV. |
+| `download_statement` | Save an earlier conversion as CSV, OFX, QFX, QBO or Xero CSV (in Downloads unless you say where). |
 | `list_conversions` | List recent conversions with their status. |
 | `get_credits` | Check how many pages are left this billing period. |
 
@@ -78,6 +80,10 @@ Requires Node.js 20 or later.
 - "Turn every PDF in `~/Statements/2026` into OFX files for Xero."
 - "Convert `amex-march.pdf` to QBO for QuickBooks Desktop. The PDF password is 4821."
 - "Total my September spending by category from `chase-sep.pdf`."
+
+## Agent skill
+
+For agents without MCP support, [`skills/bankconv/SKILL.md`](skills/bankconv/SKILL.md) teaches the same workflow through the REST API with `curl`.
 
 ## Privacy
 
