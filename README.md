@@ -6,7 +6,7 @@ Point your assistant at a statement on your computer and ask for what you need: 
 
 ```
 You: Convert ~/Downloads/chase-september.pdf to QBO for QuickBooks Desktop.
-Assistant: Saved QBO to ~/Downloads/chase-september.qbo (42 transactions, Sep 1–30, USD).
+Assistant: Saved QBO to ~/Downloads/chase-september.qbo.
 ```
 
 ## What you get
@@ -92,7 +92,7 @@ The PDF is uploaded to BankConv over HTTPS and processed there. The PDF and its 
 
 ## Links
 
-- [BankConv](https://bankconv.com) · [API docs](https://bankconv.com/api-docs) · [Supported banks](https://bankconv.com/banks)
+- [BankConv](https://bankconv.com) · [MCP server page](https://bankconv.com/integrations/mcp) · [API docs](https://bankconv.com/api-docs) · [Supported banks](https://bankconv.com/banks)
 
 ## License
 
