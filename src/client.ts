@@ -54,12 +54,34 @@ export class BankConvError extends Error {
 
 type Fetch = typeof fetch;
 
+export type PollOptions = { timeoutMs?: number; intervalMs?: number; sleep?: (ms: number) => Promise<unknown> };
+
+const defaultSleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The file name from a Content-Disposition header: the UTF-8 `filename*` when present, else `filename`. */
+export function dispositionFilename(header: string): string | null {
+  const encoded = /filename\*=utf-8''([^;]+)/i.exec(header)?.[1];
+
+  if (encoded) {
+    return decodeURIComponent(encoded);
+  }
+
+  const quoted = /filename="((?:[^"\\]|\\.)*)"/.exec(header)?.[1];
+
+  if (quoted !== undefined) {
+    return quoted.replace(/\\(.)/g, '$1');
+  }
+
+  return /filename=([^;]+)/.exec(header)?.[1].trim() ?? null;
+}
+
 /** A thin client for the BankConv REST API (https://bankconv.com/api-docs). */
 export class BankConvClient {
   constructor(
     private readonly apiKey: string,
     private readonly baseUrl = 'https://bankconv.com/api/v1',
     private readonly fetcher: Fetch = fetch,
+    private readonly readyPoll: PollOptions = {},
   ) {}
 
   async upload(filePath: string, password?: string): Promise<Conversion> {
@@ -90,18 +112,17 @@ export class BankConvClient {
   async transactions(id: string, tables?: string): Promise<Transactions> {
     const query = tables ? `?${new URLSearchParams({ tables })}` : '';
 
-    return (await this.json<{ data: Transactions }>('GET', `/conversions/${encodeURIComponent(id)}/transactions${query}`)).data;
+    return this.whenReady(async () => (await this.json<{ data: Transactions }>('GET', `/conversions/${encodeURIComponent(id)}/transactions${query}`)).data);
   }
 
   async download(id: string, format: FileFormat, tables?: string): Promise<DownloadedFile> {
     const query = new URLSearchParams({ format, ...(format === 'csv' ? { view: 'merged' } : {}), ...(tables ? { tables } : {}) });
-    const response = await this.request('GET', `/conversions/${encodeURIComponent(id)}/download?${query}`);
-    const disposition = response.headers.get('content-disposition') ?? '';
+    const response = await this.whenReady(() => this.request('GET', `/conversions/${encodeURIComponent(id)}/download?${query}`));
     const warnings = response.headers.get('x-bankconv-warnings');
 
     return {
       content: Buffer.from(await response.arrayBuffer()),
-      filename: /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? null,
+      filename: dispositionFilename(response.headers.get('content-disposition') ?? ''),
       warnings: warnings ? (JSON.parse(warnings) as string[]) : [],
     };
   }
@@ -113,10 +134,7 @@ export class BankConvClient {
   /**
    * Polls until the conversion finishes. Resolves on "completed"; rejects on "failed", "no_credits" or the timeout.
    */
-  async waitForCompletion(
-    id: string,
-    { timeoutMs = 180_000, intervalMs = 3_000, sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)) } = {},
-  ): Promise<Conversion> {
+  async waitForCompletion(id: string, { timeoutMs = 180_000, intervalMs = 3_000, sleep = defaultSleep }: PollOptions = {}): Promise<Conversion> {
     const deadline = Date.now() + timeoutMs;
 
     for (;;) {
@@ -136,6 +154,26 @@ export class BankConvClient {
 
       if (Date.now() >= deadline) {
         throw new BankConvError(`The conversion is still ${conversion.status}. Check again later with conversion id ${id}.`, 408, 'timeout');
+      }
+
+      await sleep(intervalMs);
+    }
+  }
+
+  /**
+   * Retries while the API answers "not_ready": the statement details (account type, period) arrive a few seconds after a conversion completes.
+   */
+  private async whenReady<T>(call: () => Promise<T>): Promise<T> {
+    const { timeoutMs = 300_000, intervalMs = 3_000, sleep = defaultSleep } = this.readyPoll;
+    const deadline = Date.now() + timeoutMs;
+
+    for (;;) {
+      try {
+        return await call();
+      } catch (error) {
+        if (!(error instanceof BankConvError) || error.code !== 'not_ready' || Date.now() >= deadline) {
+          throw error;
+        }
       }
 
       await sleep(intervalMs);

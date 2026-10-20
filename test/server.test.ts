@@ -5,7 +5,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
-import { BankConvClient, BankConvError, type Transactions } from '../src/client.js';
+import { BankConvClient, BankConvError, dispositionFilename, type Transactions } from '../src/client.js';
 import { outputPath, registerTools, transactionsResult } from '../src/tools.js';
 
 const transactions: Transactions = {
@@ -27,7 +27,7 @@ const transactions: Transactions = {
 const conversion = (status: string) => ({ id: 'c1', status, pages_count: 3, expired: false, created_at: '2026-10-20T10:00:00Z', completed_at: null });
 
 /** A fake BankConv API that records requests and answers by path. */
-function fakeApi(statuses: string[] = ['processing', 'completed']) {
+function fakeApi(statuses: string[] = ['processing', 'completed'], notReadyAnswers = 0) {
   const requests: Array<{ method: string; url: string; headers: Record<string, string>; body: unknown }> = [];
 
   const fetcher = (async (url: string, init: RequestInit) => {
@@ -40,6 +40,11 @@ function fakeApi(statuses: string[] = ['processing', 'completed']) {
 
     if (path === '/conversions/c1') {
       return Response.json({ data: conversion(statuses.shift() ?? 'completed') });
+    }
+
+    if (path.startsWith('/conversions/c1/') && notReadyAnswers > 0) {
+      notReadyAnswers--;
+      return Response.json({ error: { code: 'not_ready', message: 'The statement details are still being read.', status: 422 } }, { status: 422 });
     }
 
     if (path === '/conversions/c1/transactions') {
@@ -59,7 +64,7 @@ function fakeApi(statuses: string[] = ['processing', 'completed']) {
     return Response.json({ data: { remaining: 480 } });
   }) as unknown as typeof fetch;
 
-  return { client: new BankConvClient('sk_test', 'https://bankconv.test/api/v1', fetcher), requests };
+  return { client: new BankConvClient('sk_test', 'https://bankconv.test/api/v1', fetcher, { sleep: async () => {} }), requests };
 }
 
 async function pdf(): Promise<string> {
@@ -97,6 +102,19 @@ describe('BankConvClient', () => {
 
   it('turns API errors into readable errors', async () => {
     await expect(fakeApi().client.transactions('missing')).rejects.toEqual(new BankConvError('Resource not found.', 404, 'not_found'));
+  });
+
+  it('retries while the statement details are still being read', async () => {
+    const { client, requests } = fakeApi([], 2);
+
+    expect((await client.transactions('c1')).transaction_count).toBe(2);
+    expect(requests).toHaveLength(3);
+  });
+
+  it('reads plain, quoted and UTF-8 file names', () => {
+    expect(dispositionFilename('attachment; filename=statement.qbo')).toBe('statement.qbo');
+    expect(dispositionFilename('attachment; filename="chase \\"jan\\".ofx"')).toBe('chase "jan".ofx');
+    expect(dispositionFilename(`attachment; filename="chase e.ofx"; filename*=utf-8''chase%20%C3%A9.ofx`)).toBe('chase é.ofx');
   });
 
   it('downloads a file with its name and warnings', async () => {
