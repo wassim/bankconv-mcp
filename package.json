@@ -41,7 +41,8 @@
     "build": "tsc && chmod +x dist/index.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "bundle": "scripts/bundle.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

@@ -1,0 +1,54 @@
+{
+  "manifest_version": "0.2",
+  "name": "bankconv",
+  "display_name": "BankConv",
+  "version": "0.1.1",
+  "description": "Convert PDF bank statements to transactions, CSV, OFX, QFX, QBO or Xero CSV.",
+  "long_description": "Convert PDF bank and credit card statements from your AI assistant. Ask for the transactions (ISO dates, one signed amount, running balance; opening balances and totals left out) to analyse them, or for a file saved next to the PDF: CSV, OFX for Xero, MYOB, Sage and QuickBooks Online, QFX for Quicken, QBO Web Connect for QuickBooks Desktop, or Xero CSV. Reads password-protected and scanned PDFs. Needs a BankConv API key; conversions use the pages of your BankConv account.",
+  "author": {
+    "name": "BankConv",
+    "email": "support@bankconv.com",
+    "url": "https://bankconv.com"
+  },
+  "homepage": "https://bankconv.com/integrations/mcp",
+  "documentation": "https://bankconv.com/integrations/mcp",
+  "support": "https://github.com/wassim/bankconv-mcp/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wassim/bankconv-mcp"
+  },
+  "icon": "assets/icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "BANKCONV_API_KEY": "${user_config.api_key}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "convert_statement", "description": "Convert a PDF statement on this computer into transactions, or save it as CSV, OFX, QFX, QBO or Xero CSV." },
+    { "name": "get_transactions", "description": "Get the transactions of an earlier conversion." },
+    { "name": "download_statement", "description": "Save an earlier conversion as CSV, OFX, QFX, QBO or Xero CSV." },
+    { "name": "list_conversions", "description": "List recent conversions with their status." },
+    { "name": "get_credits", "description": "Check how many pages the account has left." }
+  ],
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "BankConv API key",
+      "description": "Create one at https://app.bankconv.com/teams/api-keys",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "keywords": ["bank statement", "pdf to csv", "ofx", "qfx", "qbo", "quickbooks", "xero", "quicken", "accounting"],
+  "license": "MIT",
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "node": ">=20.0.0" }
+  }
+}

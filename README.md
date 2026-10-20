@@ -30,7 +30,9 @@ claude mcp add bankconv -e BANKCONV_API_KEY=sk_live_your_key -- npx -y bankconv-
 
 ### Claude Desktop
 
-Add this to `claude_desktop_config.json` (Settings → Developer → Edit Config):
+One click: download [`bankconv.mcpb`](https://github.com/wassim/bankconv-mcp/releases/latest/download/bankconv.mcpb) and open it. Claude Desktop installs the server and asks for your API key.
+
+Or add this to `claude_desktop_config.json` (Settings → Developer → Edit Config):
 
 ```json
 {
