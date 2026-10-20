@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.wassim/bankconv-mcp",
+  "title": "BankConv",
+  "description": "Convert PDF bank statements into transactions, CSV, OFX, QFX, QBO or Xero CSV.",
+  "websiteUrl": "https://bankconv.com/integrations/mcp",
+  "repository": {
+    "url": "https://github.com/wassim/bankconv-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "bankconv-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BANKCONV_API_KEY",
+          "description": "Your BankConv API key, from https://app.bankconv.com/teams/api-keys",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
