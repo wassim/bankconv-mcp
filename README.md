@@ -1,6 +1,7 @@
 # BankConv MCP server
 
 [![wassim/bankconv-mcp MCP server](https://glama.ai/mcp/servers/wassim/bankconv-mcp/badges/score.svg)](https://glama.ai/mcp/servers/wassim/bankconv-mcp)
+[![AllMCPs Verified](https://allmcps.com/api/badge/bankconv)](https://allmcps.com/mcp/bankconv?verify=f993b300-650b-4e82-a437-fe3bd238d200)
 
 Convert PDF bank statements into transactions, CSV, OFX, QFX, QBO or Xero CSV from Claude, Cursor, VS Code and other AI assistants.
 
