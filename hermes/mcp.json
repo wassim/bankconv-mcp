@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "bankconv": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "bankconv-mcp@0.1.1"],
+      "env": { "BANKCONV_API_KEY": "${BANKCONV_API_KEY}" }
+    }
+  }
+}
