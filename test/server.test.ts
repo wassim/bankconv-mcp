@@ -5,7 +5,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
-import { BankConvClient, BankConvError, dispositionFilename, type Transactions } from '../src/client.js';
+import { BankConvClient, BankConvError, dispositionFilename, missingApiKeyMessage, type Transactions } from '../src/client.js';
 import { outputPath, registerTools, transactionsResult } from '../src/tools.js';
 
 const transactions: Transactions = {
@@ -175,5 +175,28 @@ describe('tools', () => {
     const saved = await client.callTool({ name: 'convert_statement', arguments: { file_path: source, output: 'qbo' } });
     expect((saved.content as Array<{ text: string }>)[0].text).toContain(`Saved QBO to ${source.replace('.pdf', '.qbo')}`);
     expect(await readFile(source.replace('.pdf', '.qbo'), 'utf8')).toBe('OFXHEADER:100');
+  });
+
+  it('lists its tools without an API key and asks for one when a tool is called', async () => {
+    const requests: string[] = [];
+    const fetcher = (async (url: string) => {
+      requests.push(url);
+
+      return Response.json({ data: {} });
+    }) as unknown as typeof fetch;
+    const server = new McpServer({ name: 'bankconv', version: 'test' });
+    registerTools(server, new BankConvClient(undefined, 'https://bankconv.test/api/v1', fetcher));
+
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: 'test', version: '1' });
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+    expect((await client.listTools()).tools).toHaveLength(5);
+
+    const result = await client.callTool({ name: 'get_credits', arguments: {} });
+
+    expect(result.isError).toBe(true);
+    expect((result.content as Array<{ text: string }>)[0].text).toBe(missingApiKeyMessage);
+    expect(requests).toHaveLength(0);
   });
 });

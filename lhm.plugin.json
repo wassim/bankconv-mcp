@@ -1,7 +1,9 @@
 {
   "author": "BankConv (https://bankconv.com)",
+  "category": "stocks-finance",
   "description": "MCP server for BankConv: convert PDF bank statements into transactions, CSV, OFX, QFX, QBO or Xero CSV from Claude, Cursor and other AI assistants.",
   "homepage": "https://bankconv.com/integrations/mcp",
+  "icon": "https://raw.githubusercontent.com/wassim/bankconv-mcp/main/assets/icon.png",
   "identifier": "wassim-bankconv-mcp",
   "name": "BankConv",
   "prompts": [],
@@ -205,5 +207,5 @@
       }
     }
   ],
-  "version": "0.1.1"
+  "version": "0.1.2"
 }

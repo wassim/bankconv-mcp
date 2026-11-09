@@ -2,7 +2,7 @@
   "manifest_version": "0.2",
   "name": "bankconv",
   "display_name": "BankConv",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Convert PDF bank statements to transactions, CSV, OFX, QFX, QBO or Xero CSV.",
   "long_description": "Convert PDF bank and credit card statements from your AI assistant. Ask for the transactions (ISO dates, one signed amount, running balance; opening balances and totals left out) to analyse them, or for a file saved next to the PDF: CSV, OFX for Xero, MYOB, Sage and QuickBooks Online, QFX for Quicken, QBO Web Connect for QuickBooks Desktop, or Xero CSV. Reads password-protected and scanned PDFs. Needs a BankConv API key; conversions use the pages of your BankConv account.",
   "author": {

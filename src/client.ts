@@ -42,6 +42,8 @@ export type DownloadedFile = {
   warnings: string[];
 };
 
+export const missingApiKeyMessage = 'Set BANKCONV_API_KEY to your BankConv API key. Create one at https://app.bankconv.com/teams/api-keys.';
+
 export class BankConvError extends Error {
   constructor(
     message: string,
@@ -78,7 +80,7 @@ export function dispositionFilename(header: string): string | null {
 /** A thin client for the BankConv REST API (https://bankconv.com/api-docs). */
 export class BankConvClient {
   constructor(
-    private readonly apiKey: string,
+    private readonly apiKey: string | undefined,
     private readonly baseUrl = 'https://bankconv.com/api/v1',
     private readonly fetcher: Fetch = fetch,
     private readonly readyPoll: PollOptions = {},
@@ -185,6 +187,10 @@ export class BankConvClient {
   }
 
   private async request(method: string, path: string, body?: FormData): Promise<Response> {
+    if (!this.apiKey) {
+      throw new BankConvError(missingApiKeyMessage, 401, 'missing_api_key');
+    }
+
     const response = await this.fetcher(`${this.baseUrl}${path}`, {
       method,
       body,
