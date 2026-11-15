@@ -1,0 +1,19 @@
+{
+  "name": "bankconv",
+  "version": "1.0.0",
+  "description": "Convert PDF bank and credit card statements into transactions, CSV, OFX, QFX, QBO or Xero CSV with BankConv. Connects to the BankConv remote MCP server; sign in with your BankConv account, no API key needed.",
+  "author": {
+    "name": "BankConv",
+    "email": "support@bankconv.com"
+  },
+  "homepage": "https://bankconv.com/integrations/mcp",
+  "repository": "https://github.com/wassim/bankconv-mcp",
+  "license": "MIT",
+  "keywords": ["bank statement", "pdf to csv", "ofx", "qfx", "qbo", "quickbooks", "xero", "quicken", "accounting"],
+  "logo": "assets/icon.png",
+  "mcpServers": {
+    "bankconv": {
+      "url": "https://bankconv.com/mcp"
+    }
+  }
+}

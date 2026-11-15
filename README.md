@@ -18,6 +18,12 @@ Assistant: Saved QBO to ~/Downloads/chase-september.qbo.
 - **Files**: CSV, OFX (Xero, Sage, MYOB, QuickBooks Online), QFX (Quicken), QBO (QuickBooks Desktop Web Connect, with your bank's QuickBooks ID) and Xero CSV (Xero's own columns).
 - Password-protected PDFs, scanned statements and multi-page statements.
 
+## Remote server (no API key)
+
+BankConv also runs this server remotely at `https://bankconv.com/mcp` (Streamable HTTP with OAuth). Add that URL as a remote or custom MCP server in ChatGPT, Claude, Cursor or any client that supports OAuth, then sign in with your BankConv account. Nothing to install and no API key. The Cursor plugin in `.cursor-plugin/` uses it.
+
+In ChatGPT, attach the PDF to the chat. Clients that can't pass attachments to a remote server need a public HTTPS link to the PDF; for files on your computer, use the local server below.
+
 ## Setup
 
 1. Create an API key in BankConv under **Team → API keys** (<https://app.bankconv.com/teams/api-keys>). Conversions use pages from your BankConv plan.
